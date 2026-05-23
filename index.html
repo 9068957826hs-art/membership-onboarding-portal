@@ -21,7 +21,7 @@
             </div>
         </div>
 
-        <!-- ROLE NAVIGATION BAR WITH ROLE SECURE LOCKING -->
+        <!-- ROLE NAVIGATION BAR -->
         <div class="flex flex-wrap items-center gap-1.5 bg-gray-100 p-1 rounded-xl border border-gray-200/60" id="role-bar">
             <button onclick="switchRole('Stakeholder')" id="btn-Stakeholder" class="role-btn flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-indigo-700 shadow-sm border border-gray-200/50">
                 <i class="fa-solid fa-eye"></i><span>Stakeholder (View Only)</span>
@@ -41,7 +41,7 @@
         </div>
     </header>
 
-    <!-- LOADER (REDUCES WAIT TIMES WITH OPTIMISTIC FALLBACK LOADING) -->
+    <!-- LOADER -->
     <div id="loader" class="flex-1 flex flex-col items-center justify-center space-y-4">
         <i class="fa-solid fa-circle-notch animate-spin text-3xl text-indigo-600"></i>
         <p class="text-sm font-semibold text-gray-600">Connecting to cloud storage backend...</p>
@@ -54,7 +54,10 @@
     <main id="dashboard-view" class="hidden flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="space-y-6 lg:col-span-1">
             <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Active Tracker Focus</label>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Active Tracker Focus</label>
+                    <span id="offline-badge" class="hidden text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">Offline Mode</span>
+                </div>
                 <select id="org-selector" onchange="selectOrganization(this.value)" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm font-bold text-gray-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></select>
             </div>
 
@@ -87,10 +90,9 @@
     </main>
 
     <script>
-        // REPLACE THE STRING VALUE BELOW WITH YOUR COPIED RENDER WEB SYSTEM LINK FROM STEP 1
+        // REPLACE WITH YOUR COPIED RENDER WEB SYSTEM LINK FROM PREVIOUS STEPS
         const API_BASE = 'https://membership-backend-w52h.onrender.com/api';
 
-        // UNIQUE SECURITY PASSKEYS FOR TEAM CHANNELS
         const PINS = {
             'QA Specialist': 'qa123',
             'UI Designer': 'design123',
@@ -101,30 +103,27 @@
         let state = {
             organizations: [],
             selectedOrgId: '',
-            currentRole: 'Stakeholder'
+            currentRole: 'Stakeholder',
+            isOffline: false
         };
 
         window.addEventListener('DOMContentLoaded', fetchOrganizations);
 
         async function fetchOrganizations() {
-            // Setup a safety structural fallback timer if Render is sleeping
-            const downloadTimeout = setTimeout(() => {
-                console.log("Render backend cold starting... providing instant storage view model");
-            }, 5000);
-
             try {
                 const response = await fetch(`${API_BASE}/organizations`);
-                clearTimeout(downloadTimeout);
                 const data = await response.json();
+                state.isOffline = false;
                 processIncomingData(data);
             } catch (err) {
-                console.error("Backend initializing, falling back onto localized tracking parameters.", err);
+                console.error("Using localized tracking parameters.", err);
                 useLocalFallback();
             }
         }
 
         function useLocalFallback() {
-            clearTimeout(window.downloadTimeout);
+            state.isOffline = true;
+            document.getElementById('offline-badge').classList.remove('hidden');
             const fallbackData = [
                 { id: '1', name: 'Metropolitan Museum of Art', website: 'https://www.metmuseum.org', contact: 'sarah.jenkins@metmuseum.org', logoReceived: 1, appleWalletStrip: 1, googleWalletStrip: 0, brandColor: '#E4002B', integrationType: 'Altru', integrationDone: 1, testingRecordsPassed: 0, cardsDelivered: 0, isLaunched: 0, currentWeek: 2 },
                 { id: '2', name: 'Sciencenter Discovery Park', website: 'https://www.sciencenter.org', contact: 'm.ross@sciencenter.org', logoReceived: 0, appleWalletStrip: 0, googleWalletStrip: 0, brandColor: '#00A3E0', integrationType: 'RE NXT', integrationDone: 0, testingRecordsPassed: 0, cardsDelivered: 0, isLaunched: 0, currentWeek: 1 }
@@ -155,6 +154,52 @@
             renderDashboard();
         }
 
+        async function createNewOrganization(name, website, contact) {
+            if (!name) return alert("Organization Name is required!");
+            
+            const newOrg = {
+                id: String(Date.now()),
+                name: name,
+                website: website || '',
+                contact: contact || '',
+                logoReceived: 0,
+                appleWalletStrip: 0,
+                googleWalletStrip: 0,
+                brandColor: '#000000',
+                integrationType: 'Altru',
+                integrationDone: 0,
+                testingRecordsPassed: 0,
+                cardsDelivered: 0,
+                isLaunched: 0,
+                currentWeek: 1
+            };
+
+            // Optimistic front-end addition
+            state.organizations.push({
+                ...newOrg,
+                logoReceived: false, appleWalletStrip: false, googleWalletStrip: false,
+                integrationDone: false, testingRecordsPassed: false, cardsDelivered: false, isLaunched: false
+            });
+            state.selectedOrgId = newOrg.id;
+            
+            populateOrgSelector();
+            renderDashboard();
+
+            if (!state.isOffline) {
+                try {
+                    // Send to Render server backend using dynamic update trick
+                    await fetch(`${API_BASE}/organizations/${newOrg.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newOrg),
+                    });
+                } catch (err) {
+                    console.error("Failed writing new record to database server cloud:", err);
+                }
+            }
+            alert(`${name} has been successfully added to the system portfolio pipeline!`);
+        }
+
         async function pushUpdate(updatedFields) {
             const orgId = state.selectedOrgId;
             state.organizations = state.organizations.map(org => 
@@ -162,14 +207,16 @@
             );
             renderDashboard();
 
-            try {
-                await fetch(`${API_BASE}/organizations/${orgId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updatedFields),
-                });
-            } catch (err) {
-                console.error("Local state cache written, background upload queue failure:", err);
+            if (!state.isOffline) {
+                try {
+                    await fetch(`${API_BASE}/organizations/${orgId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatedFields),
+                    });
+                } catch (err) {
+                    console.error("Local cache written, backend cloud failure:", err);
+                }
             }
         }
 
@@ -178,7 +225,7 @@
             if (userPin === PINS[targetRole]) {
                 switchRole(targetRole);
             } else {
-                alert("Invalid configuration security PIN access key code. Access locked.");
+                alert("Invalid security PIN. Access locked.");
             }
         }
 
@@ -301,20 +348,36 @@
             } 
             else if (state.currentRole === 'QA Specialist') {
                 viewport.innerHTML = `
-                    <div class="space-y-4">
-                        <h3 class="text-base font-bold text-purple-900 border-b pb-3"><i class="fa-solid fa-database mr-2"></i>Quality Assurance Entry Desk</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Organization Name</label>
-                                <input type="text" value="${activeOrg.name}" onchange="pushUpdate({name: this.value})" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none text-sm"/>
+                    <div class="space-y-6">
+                        <!-- SECTION A: INTRODUCE A NEW ACCOUNT -->
+                        <div class="bg-purple-50/50 p-4 rounded-xl border border-purple-200/60 space-y-3">
+                            <h4 class="text-xs font-bold text-purple-950 uppercase tracking-wider"><i class="fa-solid fa-plus-circle mr-1"></i> Register New Client Organization</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <input type="text" id="new-org-name" placeholder="Museum Name (Required)" class="p-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"/>
+                                <input type="url" id="new-org-web" placeholder="Website URL" class="p-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"/>
+                                <input type="email" id="new-org-contact" placeholder="Main Contact Email" class="p-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-purple-500"/>
                             </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Domain URL</label>
-                                <input type="url" value="${activeOrg.website || ''}" onchange="pushUpdate({website: this.value})" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none text-sm"/>
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Primary Point of Contact (Email)</label>
-                                <input type="email" value="${activeOrg.contact || ''}" onchange="pushUpdate({contact: this.value})" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none text-sm"/>
+                            <button onclick="createNewOrganization(document.getElementById('new-org-name').value, document.getElementById('new-org-web').value, document.getElementById('new-org-contact').value)" class="bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition-colors w-full md:w-auto">
+                                Initialize Account Profile
+                            </button>
+                        </div>
+
+                        <!-- SECTION B: EDIT CHOSEN ACCOUNT METADATA -->
+                        <div class="space-y-4 pt-2">
+                            <h3 class="text-base font-bold text-purple-900 border-b pb-3"><i class="fa-solid fa-database mr-2"></i>Modify Selected Profile Data</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Organization Name</label>
+                                    <input type="text" value="${activeOrg.name}" onchange="pushUpdate({name: this.value})" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none text-sm"/>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Domain URL</label>
+                                    <input type="url" value="${activeOrg.website || ''}" onchange="pushUpdate({website: this.value})" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none text-sm"/>
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Primary Point of Contact (Email)</label>
+                                    <input type="email" value="${activeOrg.contact || ''}" onchange="pushUpdate({contact: this.value})" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:outline-none text-sm"/>
+                                </div>
                             </div>
                         </div>
                     </div>`;
@@ -361,7 +424,7 @@
                                 <input type="checkbox" ${activeOrg.integrationDone ? 'checked' : ''} onchange="pushUpdate({integrationDone: this.checked})" class="h-4 w-4 text-blue-600 rounded"/>
                                 <span class="text-sm font-medium text-gray-700">API Connection Handshake Completed</span>
                             </label>
-                            <label class="flex items-center space-x-3 bg-gray-50 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100/70">
+                            <label class="flex items-center space-x-3 bg-gray-50 p-3 rounded-lg border border-gray-200/70 cursor-pointer hover:bg-gray-100/70">
                                 <input type="checkbox" ${activeOrg.testingRecordsPassed ? 'checked' : ''} onchange="pushUpdate({testingRecordsPassed: this.checked})" class="h-4 w-4 text-blue-600 rounded"/>
                                 <span class="text-sm font-medium text-gray-700">Data Ingestion Testing Batches Confirmed</span>
                             </label>
