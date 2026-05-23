@@ -1,9 +1,13 @@
 {
-  "name": "membership-portal-root",
+  "name": "membership-portal",
   "version": "1.0.0",
   "scripts": {
-    "install-all": "npm install --prefix backend",
-    "build": "npm run install-all",
-    "start": "node backend/server.js"
+    "build": "npm install",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "sqlite3": "^5.1.7"
   }
 }
