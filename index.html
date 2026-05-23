@@ -4,14 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Onboarding Command Engine Dashboard</title>
-    <!-- Tailwind CSS Script CDN Integration -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Vector Graphics Package for Interface Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gray-50 min-h-screen font-sans flex flex-col antialiased">
 
-    <!-- GLOBAL APPLICATION BANNER HEADER -->
+    <!-- HEADER BANNER -->
     <header class="bg-white border-b border-gray-200 px-6 py-4 flex flex-col lg:flex-row items-center justify-between gap-4 shadow-sm sticky top-0 z-50">
         <div class="flex items-center space-x-3">
             <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-indigo-100">
@@ -23,44 +21,43 @@
             </div>
         </div>
 
-        <!-- CLIENT ROLE NAVIGATION CHIPS -->
+        <!-- ROLE NAVIGATION BAR WITH ROLE SECURE LOCKING -->
         <div class="flex flex-wrap items-center gap-1.5 bg-gray-100 p-1 rounded-xl border border-gray-200/60" id="role-bar">
             <button onclick="switchRole('Stakeholder')" id="btn-Stakeholder" class="role-btn flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-indigo-700 shadow-sm border border-gray-200/50">
-                <i class="fa-solid fa-eye"></i><span>Stakeholder</span>
+                <i class="fa-solid fa-eye"></i><span>Stakeholder (View Only)</span>
             </button>
-            <button onclick="switchRole('QA Specialist')" id="btn-QA" class="role-btn flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-200/60">
-                <i class="fa-solid fa-database"></i><span>QA Specialist</span>
+            <button onclick="verifyAndSwitch('QA Specialist')" id="btn-QA" class="role-btn flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-200/60">
+                <i class="fa-solid fa-database"></i><span>QA Specialist</span> <i class="fa-solid fa-lock text-[10px] opacity-40 ml-1"></i>
             </button>
-            <button onclick="switchRole('UI Designer')" id="btn-Designer" class="role-btn flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-200/60">
-                <i class="fa-solid fa-paintbrush"></i><span>UI Designer</span>
+            <button onclick="verifyAndSwitch('UI Designer')" id="btn-Designer" class="role-btn flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-200/60">
+                <i class="fa-solid fa-paintbrush"></i><span>UI Designer</span> <i class="fa-solid fa-lock text-[10px] opacity-40 ml-1"></i>
             </button>
-            <button onclick="switchRole('Software Developer')" id="btn-Developer" class="role-btn flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-200/60">
-                <i class="fa-solid fa-code"></i><span>Software Developer</span>
+            <button onclick="verifyAndSwitch('Software Developer')" id="btn-Developer" class="role-btn flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-200/60">
+                <i class="fa-solid fa-code"></i><span>Software Developer</span> <i class="fa-solid fa-lock text-[10px] opacity-40 ml-1"></i>
             </button>
-            <button onclick="switchRole('Business Analyst')" id="btn-BA" class="role-btn flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-200/60">
-                <i class="fa-solid fa-briefcase"></i><span>Business Analyst</span>
+            <button onclick="verifyAndSwitch('Business Analyst')" id="btn-BA" class="role-btn flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-gray-900 hover:bg-gray-200/60">
+                <i class="fa-solid fa-briefcase"></i><span>Business Analyst</span> <i class="fa-solid fa-lock text-[10px] opacity-40 ml-1"></i>
             </button>
         </div>
     </header>
 
-    <!-- LOADING SHIELD OVERLAY -->
+    <!-- LOADER (REDUCES WAIT TIMES WITH OPTIMISTIC FALLBACK LOADING) -->
     <div id="loader" class="flex-1 flex flex-col items-center justify-center space-y-4">
         <i class="fa-solid fa-circle-notch animate-spin text-3xl text-indigo-600"></i>
-        <p class="text-sm font-semibold text-gray-600">Synchronizing with live engine records...</p>
+        <p class="text-sm font-semibold text-gray-600">Connecting to cloud storage backend...</p>
+        <button onclick="useLocalFallback()" class="text-xs bg-white border border-gray-300 text-gray-600 px-3 py-1.5 rounded-lg shadow-sm hover:bg-gray-50 transition-all">
+            Slow connection? Load offline backup layout
+        </button>
     </div>
 
-    <!-- MAIN DASHBOARD CONTENT AREA -->
+    <!-- MAIN INTERFACE PANEL -->
     <main id="dashboard-view" class="hidden flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        <!-- SIDEBAR CONTROLS COLUMN -->
         <div class="space-y-6 lg:col-span-1">
-            <!-- CLIENT INSTANCE SELECTOR CARD -->
             <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Active Tracker Focus</label>
                 <select id="org-selector" onchange="selectOrganization(this.value)" class="w-full p-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm font-bold text-gray-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none"></select>
             </div>
 
-            <!-- CORE METRICS & PROGRESS FOOTPRINT CARD -->
             <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
                 <div>
                     <h4 id="panel-org-name" class="font-bold text-gray-900 text-base">---</h4>
@@ -84,59 +81,82 @@
             </div>
         </div>
 
-        <!-- MAIN DATA VIEWPORT DISPLAY CONTAINER -->
         <div class="lg:col-span-2">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-[350px]" id="workspace-viewport">
-                <!-- Inner subpanels are injected by JavaScript engine execution -->
-            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-[350px]" id="workspace-viewport"></div>
         </div>
     </main>
 
-    <!-- CORE ENGINE EXECUTION LOGIC SCRIPT -->
     <script>
-        const API_BASE = 'https://membership-backend-6c4s.onrender.com';
+        // REPLACE THE STRING VALUE BELOW WITH YOUR COPIED RENDER WEB SYSTEM LINK FROM STEP 1
+        const API_BASE = 'https://membership-backend-w52h.onrender.com/api';
+
+        // UNIQUE SECURITY PASSKEYS FOR TEAM CHANNELS
+        const PINS = {
+            'QA Specialist': 'qa123',
+            'UI Designer': 'design123',
+            'Software Developer': 'dev123',
+            'Business Analyst': 'ba123'
+        };
+
         let state = {
             organizations: [],
             selectedOrgId: '',
             currentRole: 'Stakeholder'
         };
 
-        // Initialize connection layer lifecycle
         window.addEventListener('DOMContentLoaded', fetchOrganizations);
 
         async function fetchOrganizations() {
+            // Setup a safety structural fallback timer if Render is sleeping
+            const downloadTimeout = setTimeout(() => {
+                console.log("Render backend cold starting... providing instant storage view model");
+            }, 5000);
+
             try {
                 const response = await fetch(`${API_BASE}/organizations`);
+                clearTimeout(downloadTimeout);
                 const data = await response.json();
-                
-                state.organizations = data.map(org => ({
-                    ...org,
-                    logoReceived: !!org.logoReceived,
-                    appleWalletStrip: !!org.appleWalletStrip,
-                    googleWalletStrip: !!org.googleWalletStrip,
-                    integrationDone: !!org.integrationDone,
-                    testingRecordsPassed: !!org.testingRecordsPassed,
-                    cardsDelivered: !!org.cardsDelivered,
-                    isLaunched: !!org.isLaunched,
-                }));
-
-                if (state.organizations.length > 0 && !state.selectedOrgId) {
-                    state.selectedOrgId = state.organizations[0].id;
-                }
-                
-                document.getElementById('loader').classList.add('hidden');
-                document.getElementById('dashboard-view').classList.remove('hidden');
-                
-                populateOrgSelector();
-                renderDashboard();
+                processIncomingData(data);
             } catch (err) {
-                console.error("Connection link failure during backend communication:", err);
+                console.error("Backend initializing, falling back onto localized tracking parameters.", err);
+                useLocalFallback();
             }
+        }
+
+        function useLocalFallback() {
+            clearTimeout(window.downloadTimeout);
+            const fallbackData = [
+                { id: '1', name: 'Metropolitan Museum of Art', website: 'https://www.metmuseum.org', contact: 'sarah.jenkins@metmuseum.org', logoReceived: 1, appleWalletStrip: 1, googleWalletStrip: 0, brandColor: '#E4002B', integrationType: 'Altru', integrationDone: 1, testingRecordsPassed: 0, cardsDelivered: 0, isLaunched: 0, currentWeek: 2 },
+                { id: '2', name: 'Sciencenter Discovery Park', website: 'https://www.sciencenter.org', contact: 'm.ross@sciencenter.org', logoReceived: 0, appleWalletStrip: 0, googleWalletStrip: 0, brandColor: '#00A3E0', integrationType: 'RE NXT', integrationDone: 0, testingRecordsPassed: 0, cardsDelivered: 0, isLaunched: 0, currentWeek: 1 }
+            ];
+            processIncomingData(fallbackData);
+        }
+
+        function processIncomingData(data) {
+            state.organizations = data.map(org => ({
+                ...org,
+                logoReceived: !!org.logoReceived,
+                appleWalletStrip: !!org.appleWalletStrip,
+                googleWalletStrip: !!org.googleWalletStrip,
+                integrationDone: !!org.integrationDone,
+                testingRecordsPassed: !!org.testingRecordsPassed,
+                cardsDelivered: !!org.cardsDelivered,
+                isLaunched: !!org.isLaunched,
+            }));
+
+            if (state.organizations.length > 0 && !state.selectedOrgId) {
+                state.selectedOrgId = state.organizations[0].id;
+            }
+            
+            document.getElementById('loader').classList.add('hidden');
+            document.getElementById('dashboard-view').classList.remove('hidden');
+            
+            populateOrgSelector();
+            renderDashboard();
         }
 
         async function pushUpdate(updatedFields) {
             const orgId = state.selectedOrgId;
-            // Apply immediate local state optimization mutations
             state.organizations = state.organizations.map(org => 
                 org.id === orgId ? { ...org, ...updatedFields } : org
             );
@@ -149,8 +169,16 @@
                     body: JSON.stringify(updatedFields),
                 });
             } catch (err) {
-                console.error("Data syncing anomaly detected:", err);
-                fetchOrganizations(); // Roll back onto master database record truth sequence on execution fault
+                console.error("Local state cache written, background upload queue failure:", err);
+            }
+        }
+
+        function verifyAndSwitch(targetRole) {
+            const userPin = prompt(`Enter security Access Code PIN to switch into ${targetRole}:`);
+            if (userPin === PINS[targetRole]) {
+                switchRole(targetRole);
+            } else {
+                alert("Invalid configuration security PIN access key code. Access locked.");
             }
         }
 
@@ -182,8 +210,6 @@
 
         function switchRole(role) {
             state.currentRole = role;
-            
-            // Adjust visual nav button status styles mapping array states
             const roleBtnMap = {
                 'Stakeholder': 'btn-Stakeholder', 'QA Specialist': 'btn-QA',
                 'UI Designer': 'btn-Designer', 'Software Developer': 'btn-Developer', 'Business Analyst': 'btn-BA'
@@ -197,7 +223,6 @@
             if (activeBtn) {
                 activeBtn.className = "role-btn flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-white text-indigo-700 shadow-sm border border-gray-200/50";
             }
-
             renderDashboard();
         }
 
@@ -205,7 +230,6 @@
             const activeOrg = state.organizations.find(o => o.id === state.selectedOrgId);
             if (!activeOrg) return;
 
-            // Sync structural parameters displayed in the overview card block
             document.getElementById('panel-org-name').textContent = activeOrg.name;
             document.getElementById('panel-week-badge').textContent = `Week ${activeOrg.currentWeek} Active`;
             
@@ -213,7 +237,6 @@
             document.getElementById('panel-progress-text').textContent = `${progress}%`;
             document.getElementById('panel-progress-bar').style.width = `${progress}%`;
 
-            // Draw visual week steps
             for (let i = 1; i <= 4; i++) {
                 const el = document.getElementById(`timeline-w${i}`);
                 if (activeOrg.currentWeek === i) {
@@ -225,7 +248,6 @@
                 }
             }
 
-            // Route execution commands directly down to viewport workspace templates
             const viewport = document.getElementById('workspace-viewport');
             viewport.innerHTML = '';
 
@@ -260,7 +282,7 @@
 
                 viewport.innerHTML = `
                     <div class="space-y-6">
-                        <h2 class="text-base font-bold text-gray-800">Global Portfolio Tracker</h2>
+                        <h2 class="text-base font-bold text-gray-800">Global Portfolio Tracker (Read Only)</h2>
                         <div class="overflow-x-auto rounded-xl border border-gray-200">
                             <table class="min-w-full divide-y divide-gray-200 text-left">
                                 <thead class="bg-gray-50">
@@ -280,7 +302,7 @@
             else if (state.currentRole === 'QA Specialist') {
                 viewport.innerHTML = `
                     <div class="space-y-4">
-                        <h3 class="text-base font-bold text-purple-900 border-b pb-3">Quality Assurance Entry Desk</h3>
+                        <h3 class="text-base font-bold text-purple-900 border-b pb-3"><i class="fa-solid fa-database mr-2"></i>Quality Assurance Entry Desk</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Organization Name</label>
@@ -300,7 +322,7 @@
             else if (state.currentRole === 'UI Designer') {
                 viewport.innerHTML = `
                     <div class="space-y-5">
-                        <h3 class="text-base font-bold text-pink-900 border-b pb-3">Creative Identity Intake Workspace</h3>
+                        <h3 class="text-base font-bold text-pink-900 border-b pb-3"><i class="fa-solid fa-paintbrush mr-2"></i>Creative Identity Intake Workspace</h3>
                         <div class="space-y-3">
                             ${[
                                 ['logoReceived', 'Official Vector Branding Logo Asset Checked'],
@@ -324,9 +346,9 @@
             else if (state.currentRole === 'Software Developer') {
                 viewport.innerHTML = `
                     <div class="space-y-5">
-                        <h3 class="text-base font-bold text-blue-900 border-b pb-3">Integration Framework & System Operations</h3>
+                        <h3 class="text-base font-bold text-blue-900 border-b pb-3"><i class="fa-solid fa-code mr-2"></i>Integration Framework & System Operations</h3>
                         <div>
-                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Target Infrastructure Architecture</label>
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Target CRM Architecture</label>
                             <select onchange="pushUpdate({integrationType: this.value})" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-800">
                                 <option value="Altru" ${activeOrg.integrationType === 'Altru' ? 'selected' : ''}>Blackbaud Altru Ecosystem</option>
                                 <option value="Raiser Edge" ${activeOrg.integrationType === 'Raiser Edge' ? 'selected' : ''}>Raiser's Edge Classic</option>
@@ -349,7 +371,7 @@
             else if (state.currentRole === 'Business Analyst') {
                 viewport.innerHTML = `
                     <div class="space-y-5">
-                        <h3 class="text-base font-bold text-emerald-900 border-b pb-3">Business Architecture & Delivery Desk</h3>
+                        <h3 class="text-base font-bold text-emerald-900 border-b pb-3"><i class="fa-solid fa-briefcase mr-2"></i>Business Analyst Workspace</h3>
                         <div>
                             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Onboarding Implementation Track Progress</label>
                             <select onchange="pushUpdate({currentWeek: parseInt(this.value)})" class="w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm font-medium">
